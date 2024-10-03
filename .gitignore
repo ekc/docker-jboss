@@ -1,0 +1,29 @@
+# Ignore Docker-related files
+docker-compose.override.yml
+docker-compose.*.yml
+docker-compose.*.yaml
+.dockerignore
+
+# Ignore Docker container logs
+*.log
+
+# Ignore build artifacts
+/build/
+*.o
+*.so
+*.obj
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Ignore Docker volumes and networks
+docker-volume/
+docker-network/
+
+# Ignore generated Docker image layers
+*.tar
+
+# Ignore the 'images' folder (assuming it's in the root directory)
+images/
+
