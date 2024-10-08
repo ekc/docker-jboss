@@ -1,0 +1,30 @@
+FROM echooo/jboss-eap-7.2.8:1.0
+USER root
+
+ARG DEBUG=false
+ARG ANT_VERSION="1.10.15"
+
+# Set the environment variable for the JBoss home directory
+ENV JBOSS_HOME="/opt/jboss-eap-7.2" \
+    ANT_VERSION="${ANT_VERSION}" \
+    ANT_HOME="/opt/ant"
+#    LANG="en_US.UTF-8" \
+#    LANGUAGE="en_US:en" \
+#    LC_ALL="en_US.UTF-8"
+
+RUN microdnf -y install glibc-langpack-en glibc-common glibc-locale-source glibc-all-langpacks && \
+    localedef -v -c -i en_US -f UTF-8 en_US.UTF-8 || true && \
+    localedef -v -c -i th_TH -f UTF-8 th_TH.UTF-8 || true
+ENV LANG=en_US.UTF-8
+
+# Download, install Ant, and clean up
+RUN curl -o /tmp/ant.zip https://downloads.apache.org/ant/binaries/apache-ant-${ANT_VERSION}-bin.zip && \
+    unzip /tmp/ant.zip -d /opt && \
+    ln -s /opt/apache-ant-${ANT_VERSION} ${ANT_HOME} && \
+    rm -f /tmp/ant.zip
+
+# Add Ant to the path
+ENV PATH="${ANT_HOME}/bin:${PATH}"
+
+# Set the working directory
+WORKDIR /repo

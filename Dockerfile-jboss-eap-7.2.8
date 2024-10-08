@@ -1,0 +1,40 @@
+# Use UBI8 (minimal) as base image
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10
+
+ARG JBOSS_EAP_VERSION=7.2.8
+ARG JBOSS_HOME=/opt/jboss-eap-7.2
+ARG JBOSS_CLI=${JBOSS_HOME}/bin/jboss-cli.sh
+# Environment variables for JBoss EAP
+ENV JBOSS_EAP_VERSION=${JBOSS_EAP_VERSION} \
+    JBOSS_HOME=${JBOSS_HOME} \
+    JAVA_HOME=/usr/lib/jvm/java \
+    JBOSS_USER=jboss \
+    JBOSS_CLI=${JBOSS_CLI}
+
+# Install required packages (with microdnf - minimal image)
+RUN microdnf -y update && \
+    microdnf -y install java-1.8.0-openjdk-devel shadow-utils zip unzip gzip curl iproute procps net-tools && \
+    microdnf clean all
+
+# Copy JBoss EAP 7.2.0 and 7.2.8 patch zips into the image
+COPY images/jboss-eap-7.2.0.zip /tmp/jboss-eap-7.2.0.zip
+COPY images/jboss-eap-${JBOSS_EAP_VERSION}-patch.zip /tmp/jboss-eap-${JBOSS_EAP_VERSION}-patch.zip
+
+# Install JBoss EAP 7.2.0 and apply the patch using the environment variable
+RUN unzip /tmp/jboss-eap-7.2.0.zip -d /opt && \
+    $JBOSS_CLI --command="patch apply /tmp/jboss-eap-${JBOSS_EAP_VERSION}-patch.zip" && \
+    rm /tmp/jboss-eap-7.2.0.zip /tmp/jboss-eap-${JBOSS_EAP_VERSION}-patch.zip
+
+# Set ownership of the JBoss directory
+RUN groupadd -r jboss -g 1000 && \
+    useradd -r -u 1000 -g jboss $JBOSS_USER && \
+    chown -R $JBOSS_USER:$JBOSS_USER $JBOSS_HOME
+
+# Expose necessary ports
+EXPOSE 8080 9990 9993
+
+# Switch to non-root user
+USER $JBOSS_USER
+
+# Set the default command to start JBoss EAP
+CMD ["/opt/jboss-eap-7.2/bin/standalone.sh", "-b", "0.0.0.0"]
